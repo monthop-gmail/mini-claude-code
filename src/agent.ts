@@ -1,10 +1,16 @@
 import { callClaude } from './llm.js';
 import { executeTool } from './tools/index.js';
+import { loadAllSkills } from './skills/loader.js';
 import type { Message, ContentBlock, ToolUseBlock, TextBlock } from './types.js';
 
 const MAX_ITERATIONS = 20; // ป้องกัน infinite loop
 
 export async function agentLoop(userMessage: string): Promise<string> {
+  // === Step 0: โหลด Skills ===
+  // อ่าน CLAUDE.md + skills/*.md แล้วรวมเป็น string
+  // จะถูก "ฉีด" เข้า system prompt ให้ Claude รู้กฎเฉพาะทาง
+  const skillContext = await loadAllSkills();
+
   // Conversation history - เก็บบทสนทนาทั้งหมด
   const messages: Message[] = [
     { role: 'user', content: userMessage },
@@ -18,8 +24,8 @@ export async function agentLoop(userMessage: string): Promise<string> {
     iteration++;
     console.log(`\n  [Loop ${iteration}] Calling Claude...`);
 
-    // 1. ส่งให้ Claude "คิด"
-    const response = await callClaude(messages);
+    // 1. ส่งให้ Claude "คิด" (พร้อม skill context)
+    const response = await callClaude(messages, skillContext);
 
     // 2. เก็บ response เข้า conversation history
     messages.push({ role: 'assistant', content: response.content });
