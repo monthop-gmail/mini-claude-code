@@ -4,6 +4,7 @@ import { writeFileTool } from './write.js';
 import { editFileTool } from './edit.js';
 import { bashTool } from './bash.js';
 import { grepTool } from './grep.js';
+import { subAgentTool } from './sub-agent.js';
 
 // === Tool Definitions ===
 // บอก Claude ว่ามี tools อะไรบ้าง ทำอะไรได้
@@ -95,6 +96,20 @@ export const toolDefinitions: ToolDefinition[] = [
       required: ['pattern'],
     },
   },
+  {
+    name: 'sub_agent',
+    description: 'Launch a sub-agent to handle a complex subtask. The sub-agent runs in a separate context and returns only the summary. Use this for tasks that require reading many files or doing extensive research, to save your own context.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        task: {
+          type: 'string',
+          description: 'Detailed description of what the sub-agent should do and what to return',
+        },
+      },
+      required: ['task'],
+    },
+  },
 ];
 
 // === Tool Executor ===
@@ -123,6 +138,9 @@ export async function executeTool(
 
     case 'grep':
       return grepTool(input.pattern as string, input.path as string | undefined);
+
+    case 'sub_agent':
+      return subAgentTool(input.task as string);
 
     default:
       return `Unknown tool: ${name}`;
